@@ -1,0 +1,92 @@
+version: "3.7"
+services:
+  local_sql:
+    container_name: local_sql
+    restart: always
+    image: mcr.microsoft.com/mssql/server:2017-latest
+    networks:
+      - local-dev
+    environment:
+      SA_PASSWORD: "admin01!"
+      ACCEPT_EULA: "Y"
+      MSSQL_PID: "Developer"
+    volumes:
+      - sqlvolume:/var/opt/mssql
+      - /tmp:/tmp
+    ports:
+      - "1433:1433"
+  local_seq:
+    container_name: local_seq
+    restart: always
+    image: datalust/seq:latest
+    networks:
+      - local-dev
+    volumes:
+      - seq-data:/data
+    environment:
+      - ACCEPT_EULA=Y
+    ports:
+      - "5341:5341"
+      - "81:80"
+  local_sqlpad:
+    container_name: local_sqlpad
+    restart: always
+    image: sqlpad/sqlpad
+    networks:
+      - local-dev
+    volumes:
+      - sqlpad-data:/var/lib/sqlpad
+    ports:
+      - "82:3000"
+  # local_omnidb:
+  #   container_name: local_omnidb
+  #   restart: always
+  #   image: taivokasper/omnidb
+  #   volumes:
+  #     - omnidb-data:/etc/omnidb
+  #   ports:
+  #     - "83:8080"
+  #     - "25482:25482"
+  local_portainer_nginx_proxy:
+    container_name: local_portainer_nginx_proxy
+    image: jwilder/nginx-proxy
+    restart: always
+    networks:
+      - local-dev
+    ports:
+      - "83:80"
+    volumes:
+      - "/var/run/docker.sock:/tmp/docker.sock:ro"
+      - "./vhost.d:/etc/nginx/vhost.d:ro"
+  local_portainer:
+    container_name: local_portainer
+    image: portainer/portainer
+    restart: always
+    environment:
+      - VIRTUAL_HOST=localhost
+    networks:
+      - local-dev
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - portainer_data:/data
+  # local_redis_commander:
+  #   container_name: local_redis_commander
+  #   restart: always
+  #   image: rediscommander/redis-commander:latest
+  #   networks:
+  #     - local-dev
+  #   ports:
+  #     - "84:8081"
+networks:
+  local-dev:
+volumes:
+  sqlvolume:
+    name: sqlvolume
+  seq-data:
+    name: seq-data
+  # omnidb-data:
+  #   name: omnidb-data
+  sqlpad-data:
+    name: sqlpad-data
+  portainer_data:
+    name: portainer_data
